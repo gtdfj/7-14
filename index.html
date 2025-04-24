@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>下载成绩排名文件</title>
+</head>
+
+<body>
+    <button id="downloadButton">下载成绩排名文件</button>
+    <script>
+        const downloadButton = document.getElementById('downloadButton');
+        downloadButton.addEventListener('click', function () {
+            const fileName = '成绩排名.xlsx';
+            const link = document.createElement('a');
+            link.href = fileName;
+            link.download = fileName;
+            link.click();
+        });
+    </script>
+</body>
+
+</html>
+    
