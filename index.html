@@ -5,11 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>成绩排名文件下载</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -118,20 +119,49 @@
 
             try {
                 loading.style.display = 'block';
-                const response = await fetch('成绩排名.xlsx');
-                if (!response.ok) {
-                    throw new Error('文件获取失败');
+                error.style.display = 'none';
+                
+                // 使用相对路径加载文件
+                let response;
+                try {
+                    response = await fetch('./成绩排名.xlsx');
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            throw new Error('找不到成绩排名文件，请确保"成绩排名.xlsx"文件存在于项目目录中');
+                        } else {
+                            throw new Error(`文件加载失败: HTTP状态码 ${response.status}`);
+                        }
+                    }
+                } catch (err) {
+                    if (err.message.includes('Failed to fetch')) {
+                        throw new Error('无法连接到服务器，请检查网络连接或文件路径是否正确。如果使用本地开发服务器，请确保已启动服务器并访问正确的URL');
+                    }
+                    throw err;
                 }
-                const data = await response.arrayBuffer();
-                const workbook = XLSX.read(data, { type: 'array' });
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                gradesData = XLSX.utils.sheet_to_json(worksheet);
-                loading.style.display = 'none';
+                
+                const arrayBuffer = await response.arrayBuffer();
+                
+                try {
+                    const data = new Uint8Array(arrayBuffer);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    gradesData = XLSX.utils.sheet_to_json(firstSheet);
+                    loading.style.display = 'none';
+                    console.timeEnd('excelProcessing');
+                } catch (err) {
+                    console.error('Excel文件解析错误:', err);
+                    error.textContent = 'Excel文件格式不正确，请检查文件内容。';
+                    error.style.display = 'block';
+                    loading.style.display = 'none';
+                }
+                
+                console.time('excelProcessing');
             } catch (err) {
                 loading.style.display = 'none';
+                error.textContent = `加载失败: ${err.message}`;
                 error.style.display = 'block';
-                console.error('读取文件出错:', err);
+                console.error('文件加载错误:', err);
+                downloadStatus.textContent = '加载失败，请检查文件是否存在或联系管理员';
                 return;
             }
 
@@ -163,30 +193,37 @@
                     previewTable.classList.add('hidden');
                     return;
                 }
+                
+                // 性能优化：使用缓存和更高效的数据处理
+                const subjects = ['地理', '生物', '英语', '数学', '语文'];
                 const filteredData = [];
-                gradesData.forEach(student => {
-                    const subjects = ['地理', '生物', '英语', '数学', '语文'];
-                    subjects.forEach(subject => {
-                        const subjectScore = student[`${subject}成绩`];
-                        const subjectRank = student[`${subject}排名`];
-                        if (student['姓名'].toLowerCase().includes(searchTerm) || subject.toLowerCase().includes(searchTerm)) {
+                
+                // 使用for循环替代flatMap，性能更好
+                for (let i = 0; i < gradesData.length; i++) {
+                    const student = gradesData[i];
+                    const nameMatch = student['姓名'].toLowerCase().includes(searchTerm);
+                    
+                    for (let j = 0; j < subjects.length; j++) {
+                        const subject = subjects[j];
+                        if (nameMatch || subject.toLowerCase().includes(searchTerm)) {
                             filteredData.push({
                                 '学生姓名': student['姓名'],
                                 '学科': subject,
-                                '成绩': subjectScore,
-                                '排名': subjectRank
+                                '成绩': student[`${subject}成绩`],
+                                '排名': student[`${subject}排名`]
                             });
                         }
-                    });
-                });
-
-                previewTableBody.innerHTML = '';
+                    }
+                }
+                
+                // 性能优化：批量更新DOM
+                const fragment = document.createDocumentFragment();
                 if (filteredData.length > 0) {
-                    const rows = generateRows(filteredData);
-                    previewTableBody.appendChild(rows);
+                    fragment.appendChild(generateRows(filteredData));
+                    previewTableBody.innerHTML = '';
+                    previewTableBody.appendChild(fragment);
                     previewTable.classList.remove('hidden');
                 } else {
-                    const noResultRow = document.createElement('tr');
                     const noResultCell = document.createElement('td');
                     noResultCell.colSpan = 4;
                     noResultCell.textContent = '未找到匹配结果';
@@ -198,26 +235,39 @@
 
             searchBtn.addEventListener('click', search);
 
-            downloadBtn.addEventListener('click', () => {
+            downloadBtn.addEventListener('click', async () => {
                 downloadStatus.textContent = '正在下载，请稍候...';
                 const fileName = '成绩排名.xlsx';
                 const link = document.createElement('a');
-                link.href = fileName;
-                link.download = fileName;
+                link.href = 'https://github.com/gtdfj/7-14/blob/acfc66f870a7834b2f54d8c7228f95416802cd71/%E6%88%90%E7%BB%A9%E6%8E%92%E5%90%8D.xlsx';
 
-                link.addEventListener('error', () => {
+                try {
+                    const response = await fetch(fileName);
+                    if (!response.ok) {
+                        throw new Error(`下载失败，状态码: ${response.status}`);
+                    }
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = fileName;
+
+                    link.click();
+
+                    // 释放 URL 对象
+                    window.URL.revokeObjectURL(url);
+
+                    setTimeout(() => {
+                        downloadStatus.textContent = '下载完成';
+                    }, 2000);
+                } catch (err) {
+                    console.error('下载出错:', err.message);
                     downloadStatus.textContent = '下载失败，请检查文件是否存在。';
-                });
-
-                link.click();
-
-                setTimeout(() => {
-                    downloadStatus.textContent = '下载完成';
-                }, 2000);
+                }
             });
         });
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </body>
 
-</html>    
+</html>
