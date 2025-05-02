@@ -170,13 +170,13 @@
                 data.forEach(item => {
                     const row = document.createElement('tr');
                     const nameCell = document.createElement('td');
-                    nameCell.textContent = item['学生姓名'];
+                    nameCell.textContent = item['学生姓名'] || item['姓名'] || '';
                     const subjectCell = document.createElement('td');
-                    subjectCell.textContent = item['学科'];
+                    subjectCell.textContent = item['学科'] || '';
                     const scoreCell = document.createElement('td');
-                    scoreCell.textContent = item['成绩'];
+                    scoreCell.textContent = item['成绩'] || item[`${item['学科']}成绩`] || item['score'] || '';
                     const rankCell = document.createElement('td');
-                    rankCell.textContent = item['排名'];
+                    rankCell.textContent = item['排名'] || item[`${item['学科']}排名`] || '';
 
                     row.appendChild(nameCell);
                     row.appendChild(subjectCell);
