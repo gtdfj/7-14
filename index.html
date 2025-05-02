@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成绩排名文件下载</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f4f9;
+        }
+
+       .btn {
+            transition: all 0.3s ease;
+        }
+
+       .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+       .btn:active {
+            transform: scale(0.95);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+       .loading {
+            display: none;
+            color: #888;
+        }
+
+       .error {
+            display: none;
+            color: red;
+        }
+    </style>
+</head>
+
+<body class="flex flex-col min-h-screen">
+    <!-- 头部 -->
+    <header class="bg-blue-600 text-white py-4 text-center">
+        <h1 class="text-2xl font-bold">成绩排名文件下载</h1>
+    </header>
+
+    <!-- 搜索框 -->
+    <div class="flex justify-center p-4">
+        <input type="text" id="searchInput" class="border border-gray-300 p-2 rounded-md mr-2" placeholder="搜索学生姓名或学科">
+        <button id="searchBtn" class="btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md">搜索</button>
+    </div>
+
+    <!-- 主体内容 -->
+    <main class="flex-grow flex items-center justify-center p-8">
+        <div class="bg-white p-8 rounded-lg shadow-md text-center space-y-6">
+            <p class="text-lg text-gray-700">你可以通过点击下面的按钮来下载成绩排名文件。此文件包含了最新的成绩排名信息。</p>
+            <button id="downloadBtn" class="btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md">
+                <i class="fa-solid fa-download mr-2"></i>下载成绩排名文件
+            </button>
+            <p id="downloadStatus" class="text-sm text-gray-500"></p>
+            <p id="loading" class="loading">正在加载数据，请稍候...</p>
+            <p id="error" class="error">加载数据出错，请稍后重试。</p>
+
+            <!-- 数据预览表格 -->
+            <div id="previewTable" class="hidden">
+                <h2 class="text-xl font-bold mb-2">成绩排名预览</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>学生姓名</th>
+                            <th>学科</th>
+                            <th>成绩</th>
+                            <th>排名</th>
+                        </tr>
+                    </thead>
+                    <tbody id="previewTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- 底部 -->
+    <footer class="bg-gray-200 text-gray-600 py-2 text-center">
+        <p>&copy; 2025 成绩排名系统</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const downloadBtn = document.getElementById('downloadBtn');
+            const downloadStatus = document.getElementById('downloadStatus');
+            const searchInput = document.getElementById('searchInput');
+            const searchBtn = document.getElementById('searchBtn');
+            const previewTable = document.getElementById('previewTable');
+            const previewTableBody = document.getElementById('previewTableBody');
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            let gradesData = [];
+
+            try {
+                loading.style.display = 'block';
+                const response = await fetch('成绩排名.xlsx');
+                if (!response.ok) {
+                    throw new Error('文件获取失败');
+                }
+                const data = await response.arrayBuffer();
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                gradesData = XLSX.utils.sheet_to_json(worksheet);
+                loading.style.display = 'none';
+            } catch (err) {
+                loading.style.display = 'none';
+                error.style.display = 'block';
+                console.error('读取文件出错:', err);
+                return;
+            }
+
+            const generateRows = (data) => {
+                const fragment = document.createDocumentFragment();
+                data.forEach(item => {
+                    const row = document.createElement('tr');
+                    const nameCell = document.createElement('td');
+                    nameCell.textContent = item['学生姓名'];
+                    const subjectCell = document.createElement('td');
+                    subjectCell.textContent = item['学科'];
+                    const scoreCell = document.createElement('td');
+                    scoreCell.textContent = item['成绩'];
+                    const rankCell = document.createElement('td');
+                    rankCell.textContent = item['排名'];
+
+                    row.appendChild(nameCell);
+                    row.appendChild(subjectCell);
+                    row.appendChild(scoreCell);
+                    row.appendChild(rankCell);
+                    fragment.appendChild(row);
+                });
+                return fragment;
+            };
+
+            const search = () => {
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                if (!searchTerm) {
+                    previewTable.classList.add('hidden');
+                    return;
+                }
+                const filteredData = [];
+                gradesData.forEach(student => {
+                    const subjects = ['地理', '生物', '英语', '数学', '语文'];
+                    subjects.forEach(subject => {
+                        const subjectScore = student[`${subject}成绩`];
+                        const subjectRank = student[`${subject}排名`];
+                        if (student['姓名'].toLowerCase().includes(searchTerm) || subject.toLowerCase().includes(searchTerm)) {
+                            filteredData.push({
+                                '学生姓名': student['姓名'],
+                                '学科': subject,
+                                '成绩': subjectScore,
+                                '排名': subjectRank
+                            });
+                        }
+                    });
+                });
+
+                previewTableBody.innerHTML = '';
+                if (filteredData.length > 0) {
+                    const rows = generateRows(filteredData);
+                    previewTableBody.appendChild(rows);
+                    previewTable.classList.remove('hidden');
+                } else {
+                    const noResultRow = document.createElement('tr');
+                    const noResultCell = document.createElement('td');
+                    noResultCell.colSpan = 4;
+                    noResultCell.textContent = '未找到匹配结果';
+                    noResultRow.appendChild(noResultCell);
+                    previewTableBody.appendChild(noResultRow);
+                    previewTable.classList.remove('hidden');
+                }
+            };
+
+            searchBtn.addEventListener('click', search);
+
+            downloadBtn.addEventListener('click', () => {
+                downloadStatus.textContent = '正在下载，请稍候...';
+                const fileName = '成绩排名.xlsx';
+                const link = document.createElement('a');
+                link.href = fileName;
+                link.download = fileName;
+
+                link.addEventListener('error', () => {
+                    downloadStatus.textContent = '下载失败，请检查文件是否存在。';
+                });
+
+                link.click();
+
+                setTimeout(() => {
+                    downloadStatus.textContent = '下载完成';
+                }, 2000);
+            });
+        });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</body>
+
+</html>    
