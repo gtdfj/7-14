@@ -73,9 +73,12 @@
     <!-- 主体内容 -->
     <main class="flex-grow flex items-center justify-center p-8">
         <div class="bg-white p-8 rounded-lg shadow-md text-center space-y-6">
-            <p class="text-lg text-gray-700">你可以通过点击下面的按钮来下载成绩排名文件。此文件包含了最新的成绩排名信息。</p>
+            <p class="text-lg text-gray-700">你可以通过点击下面的按钮来下载成绩排名文件。</p>
             <button id="downloadBtn" class="btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md">
                 <i class="fa-solid fa-download mr-2"></i>下载成绩排名文件
+            </button>
+            <button id="previewBtn" class="btn bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md ml-2">
+                <i class="fa-solid fa-table mr-2"></i>预览成绩排名
             </button>
             <p id="downloadStatus" class="text-sm text-gray-500"></p>
             <p id="loading" class="loading">正在加载数据，请稍候...</p>
@@ -106,13 +109,12 @@
     </footer>
 
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            const downloadBtn = document.getElementById('downloadBtn');
-            const downloadStatus = document.getElementById('downloadStatus');
-            const searchInput = document.getElementById('searchInput');
-            const searchBtn = document.getElementById('searchBtn');
-            const previewTable = document.getElementById('previewTable');
-            const previewTableBody = document.getElementById('previewTableBody');
+        // 删除原DOMContentLoaded事件监听
+        const previewBtn = document.getElementById('previewBtn');
+        const previewTable = document.getElementById('previewTable');
+        const previewTableBody = document.getElementById('previewTableBody');
+        previewBtn.addEventListener('click', async () => {
+            // 移动原DOMContentLoaded事件里的数据加载和表格生成逻辑到这里
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
             let gradesData = [];
@@ -120,27 +122,27 @@
             try {
                 loading.style.display = 'block';
                 error.style.display = 'none';
-                
+
                 // 使用相对路径加载文件
                 let response;
                 try {
                     response = await fetch('./成绩排名.xlsx');
                     if (!response.ok) {
                         if (response.status === 404) {
-                            throw new Error('找不到成绩排名文件，请确保"成绩排名.xlsx"文件存在于项目目录中');
+                            throw new Error('找不到成绩排名文件');
                         } else {
-                            throw new Error(`文件加载失败: HTTP状态码 ${response.status}`);
+                            throw new Error(`文件加载失败: 状态码 ${response.status}`);
                         }
                     }
                 } catch (err) {
                     if (err.message.includes('Failed to fetch')) {
-                        throw new Error('无法连接到服务器，请检查网络连接或文件路径是否正确。如果使用本地开发服务器，请确保已启动服务器并访问正确的URL');
+                        throw new Error('无法连接到服务器，请检查网络连接。');
                     }
                     throw err;
                 }
-                
+
                 const arrayBuffer = await response.arrayBuffer();
-                
+
                 try {
                     const data = new Uint8Array(arrayBuffer);
                     const workbook = XLSX.read(data, { type: 'array' });
@@ -155,7 +157,49 @@
                     loading.style.display = 'none';
                 }
                 
+                const generateRows = (data) => {
+                    const fragment = document.createDocumentFragment();
+                    const noResultRow = document.createElement('tr');
+                    
+                    if (!data || data.length === 0) {
+                        const noResultCell = document.createElement('td');
+                        noResultCell.colSpan = 4;
+                        noResultCell.textContent = '没有可显示的数据';
+                        noResultRow.appendChild(noResultCell);
+                        fragment.appendChild(noResultRow);
+                        return fragment;
+                    }
+                    
+                    data.forEach(item => {
+                        if (!item) return;
+                        
+                        const row = document.createElement('tr');
+                        const nameCell = document.createElement('td');
+                        nameCell.textContent = item['学生姓名'] || '未知';
+                        
+                        const subjectCell = document.createElement('td');
+                        subjectCell.textContent = item['学科'] || '未知';
+                        
+                        const scoreCell = document.createElement('td');
+                        scoreCell.textContent = item['成绩'] || '无';
+                        
+                        const rankCell = document.createElement('td');
+                        rankCell.textContent = item['排名'] || '无';
+                        
+                        row.appendChild(nameCell);
+                        row.appendChild(subjectCell);
+                        row.appendChild(scoreCell);
+                        row.appendChild(rankCell);
+                        fragment.appendChild(row);
+                    });
+                    
+                    return fragment;
+                };
+                
                 console.time('excelProcessing');
+                previewTable.style.display = 'block';
+                previewTableBody.innerHTML = '';
+                previewTableBody.appendChild(generateRows(gradesData));
             } catch (err) {
                 loading.style.display = 'none';
                 error.textContent = `加载失败: ${err.message}`;
@@ -167,38 +211,40 @@
 
             const generateRows = (data) => {
                 const fragment = document.createDocumentFragment();
+                const noResultRow = document.createElement('tr');
+                
+                if (!data || data.length === 0) {
+                    const noResultCell = document.createElement('td');
+                    noResultCell.colSpan = 4;
+                    noResultCell.textContent = '没有可显示的数据';
+                    noResultRow.appendChild(noResultCell);
+                    fragment.appendChild(noResultRow);
+                    return fragment;
+                }
+                
                 data.forEach(item => {
+                    if (!item) return;
+                    
                     const row = document.createElement('tr');
                     const nameCell = document.createElement('td');
-                    nameCell.textContent = item['学生姓名'] || '';
+                    nameCell.textContent = item['学生姓名'] || '未知';
                     
                     const subjectCell = document.createElement('td');
-                    subjectCell.textContent = item['学科'] || '';
+                    subjectCell.textContent = item['学科'] || '未知';
                     
                     const scoreCell = document.createElement('td');
-                    scoreCell.textContent = item['成绩'] || '';
+                    scoreCell.textContent = item['成绩'] || '无';
                     
                     const rankCell = document.createElement('td');
-                    rankCell.textContent = item['排名'] || '';
-                    
-                    const totalScoreCell = document.createElement('td');
-                    totalScoreCell.textContent = `总分: ${item['总分']}`;
-                    
-                    const mainSubjectTotalCell = document.createElement('td');
-                    mainSubjectTotalCell.textContent = `主科总分: ${item['主科总分']}`;
-                    
-                    const mainSubjectRankCell = document.createElement('td');
-                    mainSubjectRankCell.textContent = `主科排名: ${item['主科排名']}`;
+                    rankCell.textContent = item['排名'] || '无';
                     
                     row.appendChild(nameCell);
                     row.appendChild(subjectCell);
                     row.appendChild(scoreCell);
                     row.appendChild(rankCell);
-                    row.appendChild(totalScoreCell);
-                    row.appendChild(mainSubjectTotalCell);
-                    row.appendChild(mainSubjectRankCell);
                     fragment.appendChild(row);
                 });
+                // 此处可能是多余的右括号，删除以解决逗号缺失问题
                 return fragment;
             };
 
@@ -216,13 +262,13 @@
                 // 使用for循环替代flatMap，性能更好
                 for (let i = 0; i < gradesData.length; i++) {
                     const student = gradesData[i];
-                    const nameMatch = student['姓名'].toLowerCase().includes(searchTerm);
+                    const nameMatch = student['学生姓名']?.toLowerCase().includes(searchTerm);
                     
                     for (let j = 0; j < subjects.length; j++) {
                         const subject = subjects[j];
                         if (nameMatch || subject.toLowerCase().includes(searchTerm)) {
                             filteredData.push({
-                                '学生姓名': student['姓名'],
+                                '学生姓名': student['学生姓名'],
                                 '学科': subject,
                                 '成绩': student[`${subject}成绩`],
                                 '排名': student[`${subject}排名`]
@@ -249,6 +295,48 @@
             };
 
             searchBtn.addEventListener('click', search);
+            
+            previewBtn.addEventListener('click', async () => {
+                if (gradesData.length === 0) {
+                    const success = await loadGradesData();
+                    if (!success) return;
+                }
+                try {
+                    const response = await fetch('./成绩排名.xlsx');
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            throw new Error('找不到成绩排名文件');
+                        } else {
+                            throw new Error(`文件加载失败: 状态码 ${response.status}`);
+                        }
+                    }
+                    const arrayBuffer = await response.arrayBuffer();
+                    try {
+                        const data = new Uint8Array(arrayBuffer);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        gradesData = XLSX.utils.sheet_to_json(firstSheet);
+                        loading.style.display = 'none';
+                        console.timeEnd('excelProcessing');
+                    } catch (err) {
+                        console.error('Excel文件解析错误:', err);
+                        error.textContent = 'Excel文件格式不正确，请检查文件内容。';
+                        error.style.display = 'block';
+                        loading.style.display = 'none';
+                    }
+                } catch (err) {
+                    if (err.message.includes('Failed to fetch')) {
+                        error.textContent = '无法连接到服务器，请检查网络连接。';
+                    } else {
+                        error.textContent = err.message;
+                    }
+                    error.style.display = 'block';
+                    loading.style.display = 'none';
+                }
+                previewTableBody.innerHTML = '';
+                previewTableBody.appendChild(generateRows(gradesData));
+                previewTable.classList.remove('hidden');
+            });
 
             downloadBtn.addEventListener('click', async () => {
                 downloadStatus.textContent = '正在下载，请稍候...';
