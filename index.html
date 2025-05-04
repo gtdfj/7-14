@@ -66,7 +66,7 @@
 
     <!-- 搜索框 -->
     <div class="flex justify-center p-4">
-        <input type="text" id="searchInput" class="border border-gray-300 p-2 rounded-md mr-2" placeholder="搜索学生姓名或学科">
+        <input type="text" id="searchInput" class="border border-gray-300 p-2 rounded-md mr-2" placeholder="抱歉，搜索功能暂不可用">
         <button id="searchBtn" class="btn bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md">搜索</button>
     </div>
 
@@ -170,18 +170,33 @@
                 data.forEach(item => {
                     const row = document.createElement('tr');
                     const nameCell = document.createElement('td');
-                    nameCell.textContent = item['学生姓名'] || item['姓名'] || '';
+                    nameCell.textContent = item['学生姓名'] || '';
+                    
                     const subjectCell = document.createElement('td');
                     subjectCell.textContent = item['学科'] || '';
+                    
                     const scoreCell = document.createElement('td');
-                    scoreCell.textContent = item['成绩'] || item[`${item['学科']}成绩`] || item['score'] || '';
+                    scoreCell.textContent = item['成绩'] || '';
+                    
                     const rankCell = document.createElement('td');
-                    rankCell.textContent = item['排名'] || item[`${item['学科']}排名`] || '';
-
+                    rankCell.textContent = item['排名'] || '';
+                    
+                    const totalScoreCell = document.createElement('td');
+                    totalScoreCell.textContent = `总分: ${item['总分']}`;
+                    
+                    const mainSubjectTotalCell = document.createElement('td');
+                    mainSubjectTotalCell.textContent = `主科总分: ${item['主科总分']}`;
+                    
+                    const mainSubjectRankCell = document.createElement('td');
+                    mainSubjectRankCell.textContent = `主科排名: ${item['主科排名']}`;
+                    
                     row.appendChild(nameCell);
                     row.appendChild(subjectCell);
                     row.appendChild(scoreCell);
                     row.appendChild(rankCell);
+                    row.appendChild(totalScoreCell);
+                    row.appendChild(mainSubjectTotalCell);
+                    row.appendChild(mainSubjectRankCell);
                     fragment.appendChild(row);
                 });
                 return fragment;
