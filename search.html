@@ -53,6 +53,22 @@
         transform: translateY(-3px);
         box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.1);
       }
+
+      .overflow-x-auto {
+        overflow-x: auto;
+      }
+
+      /* 小屏幕下（<768px）表格字体和内边距缩小 */
+      @media (max-width: 767px) {
+        .min-w-full {
+          min-width: 600px;
+        }
+        table td,
+        table th {
+          padding: 0.5rem;
+          font-size: 0.9rem;
+        }
+      }
     }
   </style>
 </head>
@@ -97,7 +113,11 @@
       </div>
 
       <div id="search-results" class="bg-white rounded-xl shadow-sm p-6">
-        <!-- 搜索结果将显示在这里 -->
+        <div class="overflow-x-auto">
+          <table class="min-w-full border-collapse border border-gray-300">
+            <!-- 表格内容将由 JavaScript 动态生成 -->
+          </table>
+        </div>
       </div>
     </section>
   </main>
@@ -147,7 +167,7 @@
     searchButton.addEventListener('click', async () => {
       const keyword = searchInput.value.trim();
       if (keyword === '') {
-        searchResults.innerHTML = '<p class="text-gray-500">请输入搜索关键词。</p>';
+        searchResults.innerHTML = '<div class="overflow-x-auto"><p class="text-gray-500">请输入搜索关键词。</p></div>';
         return;
       }
 
@@ -170,9 +190,9 @@
         }
 
         if (results.length === 0) {
-          searchResults.innerHTML = '<p class="text-gray-500">未找到相关结果。</p>';
+          searchResults.innerHTML = '<div class="overflow-x-auto"><p class="text-gray-500">未找到相关结果。</p></div>';
         } else {
-          let html = '<table class="w-full border-collapse border border-gray-300">';
+          let html = '<table class="min-w-full border-collapse border border-gray-300">';
           html += '<thead><tr>';
           headers.forEach(header => {
             html += `<th class="border border-gray-300 p-2">${header}</th>`;
@@ -182,16 +202,16 @@
           results.forEach(result => {
             html += '<tr>';
             headers.forEach(header => {
-              html += `<td class="border border-gray-300 p-2">${result[header]}</td>`;
+              html += `<td class="border border-gray-300 p-2">${result[header] || ''}</td>`;
             });
             html += '</tr>';
           });
 
           html += '</tbody></table>';
-          searchResults.innerHTML = html;
+          searchResults.innerHTML = `<div class="overflow-x-auto">${html}</div>`;
         }
       } catch (error) {
-        searchResults.innerHTML = '<p class="text-red-500">加载 CSV 文件时出现错误，请稍后再试。</p>';
+        searchResults.innerHTML = '<div class="overflow-x-auto"><p class="text-red-500">加载 CSV 文件时出现错误，请稍后再试。</p></div>';
         console.error(error);
       }
     });
