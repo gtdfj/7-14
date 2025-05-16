@@ -59,17 +59,36 @@
         <i class="fa-solid fa-graduation-cap text-primary text-xl"></i>
         <h1 class="text-lg font-bold text-dark">班级排名文件系统</h1>
       </div>
-      <nav class="hidden md:flex space-x-6">
-        <a href="#" class="text-gray-500 hover:text-primary transition-colors text-sm">首页</a>
-        <a href="#" class="text-gray-500 hover:text-primary transition-colors text-sm">历史文件</a>
-      </nav>
+      
+      <!-- 桌面端搜索和导航 -->
+      <div class="hidden md:flex items-center space-x-4">
+        <div class="relative">
+          <input type="text" placeholder="搜索文件..." 
+                 class="pl-9 pr-4 py-1.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary w-48 lg:w-64"
+                 onkeydown="if(event.key==='Enter') window.location='./search.html?query='+this.value">
+          <i class="fa-solid fa-search absolute left-3 top-2 text-gray-400"></i>
+        </div>
+        <nav class="flex space-x-6">
+          <a href="#" class="text-gray-500 hover:text-primary transition-colors text-sm">首页</a>
+          <a href="#" class="text-gray-500 hover:text-primary transition-colors text-sm">历史文件</a>
+        </nav>
+      </div>
+      
+      <!-- 移动端菜单按钮 -->
       <button class="md:hidden text-gray-500 focus:outline-none" id="menu-toggle">
         <i class="fa-solid fa-bars"></i>
       </button>
     </div>
+    
     <!-- 移动端菜单 -->
     <div class="md:hidden hidden bg-white shadow-md absolute w-full" id="mobile-menu">
       <div class="container mx-auto px-4 py-2 flex flex-col">
+        <div class="relative mb-3">
+          <input type="text" placeholder="搜索文件..." 
+                 class="pl-9 pr-4 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary w-full"
+                 onkeydown="if(event.key==='Enter') window.location='./search.html?query='+this.value">
+          <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-400"></i>
+        </div>
         <a href="#" class="text-gray-500 hover:text-primary transition-colors py-2 text-sm">首页</a>
         <a href="#" class="text-gray-500 hover:text-primary transition-colors py-2 text-sm">历史文件</a>
       </div>
@@ -128,6 +147,10 @@
           <li class="flex items-start">
             <i class="fa-solid fa-circle text-primary/60 text-xs mt-1.5 mr-2"></i>
             <span>如需查看历史排名文件，请点击导航栏"历史文件"</span>
+          </li>
+          <li class="flex items-start">
+            <i class="fa-solid fa-circle text-primary/60 text-xs mt-1.5 mr-2"></i>
+            <span>可使用顶部搜索框查找特定学期或类型的文件</span>
           </li>
         </ul>
       </div>
