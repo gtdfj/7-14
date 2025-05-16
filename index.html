@@ -113,23 +113,9 @@
         const previewBtn = document.getElementById('previewBtn');
         const previewTable = document.getElementById('previewTable');
         const previewTableBody = document.getElementById('previewTableBody');
-        previewBtn.addEventListener('click', async () => {
-            // 切换表格显示/隐藏状态
-            if (previewTable.classList.contains('hidden')) {
-                previewTable.classList.remove('hidden');
-                
-                const loading = document.getElementById('loading');
-                const error = document.getElementById('error');
-                let gradesData = [];
-
-                try {
-                    loading.style.display = 'block';
-                    error.style.display = 'none';
-
-                    // 使用相对路径加载文件
-                    let response;
-                    try {
-                        response = await fetch('https://preview.g24c14.dpdns.org/');
+        previewBtn.addEventListener('click', () => {
+            // 直接跳转到预览URL
+            window.open('https://preview.g24c14.dpdns.org/', '_blank');
                         if (!response.ok) {
                             if (response.status === 404) {
                                 throw new Error('找不到成绩排名文件');
@@ -299,7 +285,7 @@
                     downloadStatus.textContent = '正在下载，请稍候...';
                     const fileName = '成绩排名.xlsx';
                     const link = document.createElement('a');
-                    link.href = 'https://github.com/gtdfj/7-14/blob/acfc66f870a7834b2f54d8c7228f95416802cd71/%E6%88%90%E7%BB%A9%E6%8E%92%E5%90%8D.xlsx';
+                    link.href = 'https://raw.githubusercontent.com/gtdfj/7-14/acfc66f870a7834b2f54d8c7228f95416802cd71/%E6%88%90%E7%BB%A9%E6%8E%92%E5%90%8D.xlsx';
 
                     try {
                         const response = await fetch(fileName);
